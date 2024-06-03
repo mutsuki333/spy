@@ -5,19 +5,26 @@ import { emitter } from '../util'
 
 
 const Nav = ({
-  exit, reset
+  state=-1, exit, reset
 }) => {
 
   return <div className="nav grid">
-    <div className="col-3">
-      <i className="pi pi-sign-out exit" onClick={exit}></i>
-    </div>
-    <div className="col-3">
-      <i className="pi pi-replay reset" onClick={reset}></i>
-    </div>
+    { state >=0 ? 
+      <>
+        <div className="col-3">
+          <i className="pi pi-sign-out exit" onClick={exit}></i>
+        </div>
+        <div className="col-3">
+          <i className="pi pi-replay reset" onClick={reset}></i>
+        </div>
+      </>
+      :
+      <div className="col-6"></div>
+    }
     <div className="col-3">
       <i className="pi pi-share-alt share" onClick={()=>{
-        const url = `${location.origin}?hub=${encodeURIComponent(sessionStorage.getItem("hub"))}`
+        const hub = sessionStorage.getItem("hub")?`?hub=${encodeURIComponent(sessionStorage.getItem("hub"))}`:""
+        const url = `${location.origin}${hub}`
         QRCode.toDataURL(url)
         .then(dataURL=>{
           emitter.emit("dialog",{

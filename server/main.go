@@ -24,7 +24,6 @@ func main() {
 			time.Sleep(time.Minute * 5)
 
 			CleanUpLock.Lock()
-			log.Println("clean up empty hubs.")
 			for id, h := range hubs {
 				if len(h.clients) == 0 {
 					log.Printf("Hub %v removed.", h.ID)

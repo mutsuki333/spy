@@ -12,9 +12,9 @@ const VoteResult = ({
       <div className={`player-role ${getRoleClass(role)}`}>{getRole(role)}</div>
     </div>
     {isDead?
-      <h1>你死了!</h1>
+      <h1>你被淘汰了!</h1>
     :
-      <h1>{name}被殺了!</h1>
+      <h1>{name}<br/>被淘汰了!</h1>
     }
     
     <div className="rv-report">

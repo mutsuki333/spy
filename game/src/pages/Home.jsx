@@ -15,11 +15,11 @@ const Home = ({join, name, setName, hubID, setHubID}) => {
     <div className='home-join-ctr'>
       <span>房間ID:</span>
       <input type="text" placeholder="預設" 
-        value={hubID=="default"?"":hubID} onChange={e => setHubID(e.target.value.trim())}
+        value={hubID=="default"?"":hubID} onChange={e => setHubID(e.target.value)}
       />
       <br/><br/>
       <span>暱稱:</span>
-      <input type="text" placeholder="隨機" value={name} onChange={e => setName(e.target.value.trim())}/>
+      <input type="text" placeholder="隨機" value={name} onChange={e => setName(e.target.value)}/>
     </div>
 
     <div className='text-center'>

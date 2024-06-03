@@ -246,7 +246,15 @@ function App() {
 
     
     let _hubID = new URL(location.href).searchParams.get("hub")
-    if (!_hubID) _hubID = sessionStorage.getItem("hub")
+    if (_hubID) {
+      sessionStorage.setItem("hub", _hubID)
+      location.href = location.origin
+      return
+    }
+
+
+
+    _hubID = sessionStorage.getItem("hub")
     if (_hubID) {
       setHubID(_hubID)
       hubIDRef.current=_hubID
@@ -264,32 +272,31 @@ function App() {
 
       <Banner/>
       <Dialog/>
-      { state>=0 && 
-        <Nav
-          reset={()=>{
-            emitter.emit("dialog", {
-              content:<p>確定要重新開始遊戲嗎?</p>,
-              yes: ()=>ws.current?.send?.("reset")
-            })
-          }}
-          exit={()=>{
-            emitter.emit("dialog", {
-              content:<p>確定要離開遊戲嗎?</p>,
-              yes: ()=>{
-                if (state>0) ws.current?.send?.("reset")
-                sessionStorage.removeItem("hub")
-                sessionStorage.removeItem("uname")
-                leave()
-              }
-            })
-          }}
-        />
-      }
+      <Nav
+        state={state}
+        reset={()=>{
+          emitter.emit("dialog", {
+            content:<p>確定要重新開始遊戲嗎?</p>,
+            yes: ()=>ws.current?.send?.("reset")
+          })
+        }}
+        exit={()=>{
+          emitter.emit("dialog", {
+            content:<p>確定要離開遊戲嗎?</p>,
+            yes: ()=>{
+              if (state>0) ws.current?.send?.("reset")
+              sessionStorage.removeItem("hub")
+              sessionStorage.removeItem("uname")
+              leave()
+            }
+          })
+        }}
+      />
 
       { state==-1 && 
         <Home join={join} 
-          name={uname} setName={v=>{setUname(v);unameRef.current=v}}
-          hubID={hubID} setHubID={v=>{setHubID(v);hubIDRef.current=v}}
+          name={uname} setName={v=>{setUname(v);unameRef.current=v.trim()}}
+          hubID={hubID} setHubID={v=>{setHubID(v);hubIDRef.current=v.trim();sessionStorage.setItem("hub", v.trim())}}
         />
       }
       { state==0 && 

@@ -114,7 +114,7 @@ func (h *Hub) run() {
 
 					drop := &GameMsg{Type: "dropped", ClientID: client.ID, ClientName: client.Name}
 
-					h.Out(nil, drop)
+					go h.Out(nil, drop)
 					// if restartLock.TryLock() {
 					// 	go func() {
 					// 		defer restartLock.Unlock()
