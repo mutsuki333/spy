@@ -36,7 +36,7 @@ const Room = ({players, playerCnt, start, me}) => {
     </div>
     <div className="room-count-after"><span>人</span></div>
 
-    { playerCnt >= 4 &&
+    { playerCnt >= 2 &&
       <button className='room-start cursor-pointer'
         onClick={start}
       >開始!</button>

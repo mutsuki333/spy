@@ -26,11 +26,11 @@ const Vote = ({
 
   return <>
 
-    <div className='title vote'>
+    {/* <div className='title vote'>
       <span>誰是臥底</span>
-    </div>
+    </div> */}
 
-    <div className={isDead?"stmt is-dead":"stmt"}>
+    <div className={isDead?"stmt vote is-dead":"stmt vote"}>
       <span>{stmt}</span>
     </div>
 
@@ -67,6 +67,11 @@ const Vote = ({
           :
           <span>投票完成</span>
         }
+      </div>
+    }
+    { !hasVote && !isDead &&
+      <div className="vote-btn-cntr ready">
+        <span>請投票</span>
       </div>
     }
   </>

@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react"
 
-import PlayerCard from "./PlayerCard"
 import { getRole, getRoleClass } from "../util"
 
 const GameResult = ({
@@ -12,7 +11,6 @@ const GameResult = ({
   const [winner, setWinner] = useState([])
   const [loyalPlayers, setLoyalPlayers] = useState([])
   const [spyPlayers, setSpyPlayers] = useState([])
-
 
   useEffect(()=>{
 
@@ -28,6 +26,7 @@ const GameResult = ({
     }
     setWinner(_winners)
   }, [players])
+
   return <div className="gr">
     { isWin ?
       <span className="result win">你贏了!</span>
@@ -49,8 +48,8 @@ const GameResult = ({
 
     <div className="grid podium">
       { winner.map( (v,idx) => (
-      <div className="col-4">
-        <div className={`podium-player podium-${idx+1}`}>{v.Name}</div>
+      <div className="col-4" key={idx}>
+        <div className={`podium-player podium-${idx+1}`}><span>{v.Name}</span></div>
         <div className={`podium-stage podium-stage-${idx+1}`}>
           <div>{v.Wins}</div>
         </div>

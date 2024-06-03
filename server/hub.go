@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
-	"time"
 )
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -44,16 +43,21 @@ type Hub struct {
 	unregister chan *Client
 
 	disconnected []*Client
+
+	close chan bool
 }
 
-func newHub() *Hub {
+func newHub(ID string) *Hub {
+	log.Printf("Hub %v created.", ID)
 	return &Hub{
+		ID:           ID,
 		inbound:      make(chan *WsMsg),
 		outbound:     make(chan *WsMsg),
 		register:     make(chan *Client),
 		unregister:   make(chan *Client),
 		clients:      make(map[*Client]bool),
 		disconnected: make([]*Client, 0),
+		close:        make(chan bool),
 	}
 }
 
@@ -85,7 +89,7 @@ func (h *Hub) run() {
 		case client := <-h.register:
 			if h.State == Ready {
 				h.clients[client] = true
-				log.Printf("%s %s joined the game", client.ID, client.Name)
+				log.Printf("[%s] %s %s joined the game", h.ID, client.ID, client.Name)
 				h.Mirror()
 
 				go func() {
@@ -99,7 +103,7 @@ func (h *Hub) run() {
 
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
-				log.Printf("%s %s has left the game.", client.ID, client.Name)
+				log.Printf("[%s] %s %s has left the game.", h.ID, client.ID, client.Name)
 				delete(h.clients, client)
 				close(client.send)
 
@@ -110,28 +114,29 @@ func (h *Hub) run() {
 
 					drop := &GameMsg{Type: "dropped", ClientID: client.ID, ClientName: client.Name}
 
-					if restartLock.TryLock() {
-						go func() {
-							defer restartLock.Unlock()
+					h.Out(nil, drop)
+					// if restartLock.TryLock() {
+					// 	go func() {
+					// 		defer restartLock.Unlock()
 
-							// alert count down 20
-							h.Out(nil, drop)
+					// 		// alert count down 20
+					// 		h.Out(nil, drop)
 
-							// wait for 20 sec
-							time.Sleep(time.Second * 60 * 3)
+					// 		// wait for 20 sec
+					// 		time.Sleep(time.Second * 60 * 3)
 
-							if len(h.disconnected) == 0 {
-								log.Println("All Players re-joined.")
-								return
-							}
+					// 		if len(h.disconnected) == 0 {
+					// 			log.Printf("[%s] All Players re-joined.", h.ID)
+					// 			return
+					// 		}
 
-							// alert restart if not rejoined
-							h.Mirror()
-							h.inbound <- &WsMsg{Data: []byte("reset")}
-							log.Println("Game reset")
+					// 		// alert restart if not rejoined
+					// 		h.Mirror()
+					// 		h.inbound <- &WsMsg{Data: []byte("reset")}
+					// 		log.Printf("[%s] Game reset", h.ID)
 
-						}()
-					}
+					// 	}()
+					// }
 
 				} else {
 					h.Mirror()
@@ -140,7 +145,7 @@ func (h *Hub) run() {
 
 			}
 			if len(h.clients) <= 0 {
-				log.Println("The last client has left the hub.")
+				log.Printf("[%s] The last client has left the hub.", h.ID)
 				h.Reset()
 			}
 		case message := <-h.inbound:
@@ -157,6 +162,8 @@ func (h *Hub) run() {
 					delete(h.clients, client)
 				}
 			}
+		case <-h.close:
+			return
 		}
 	}
 }

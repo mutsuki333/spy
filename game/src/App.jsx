@@ -6,7 +6,6 @@ import Home from './pages/Home'
 import Room from './pages/Room'
 import Narrate from './pages/Narrate'
 import Vote from './pages/Vote'
-import Result from './pages/Result'
 
 import Nav from './components/Nav'
 import Banner from './components/Banner'
@@ -28,6 +27,8 @@ function App() {
 
   const [uname, setUname] = useState("")
   const unameRef = useRef("")
+  const [hubID, setHubID] = useState("default")
+  const hubIDRef = useRef("default")
 
   const [state, setState] = useState(-1)
   const [_ID, set_ID] = useState(-1)
@@ -36,7 +37,7 @@ function App() {
   const [playerCnt, setPlayerCnt] = useState(-1)
   const [spyCnt, setSpyCnt] = useState(-1)
 
-  const [stmt, setStmt] = useState("觀戰中")
+  const [stmt, setStmt] = useState("")
   const [narrate, setNarrate] = useState(false)
   const [isDead, setIsDead] = useState(false)
   const [narrating, setNarrating] = useState("")
@@ -44,17 +45,12 @@ function App() {
   const [voteOpt, setVoteOpt] = useState([])
   const [voted, setVoted] = useState(false)
 
-  const [liveLoyal, setLiveLoyal] = useState(-1)
-  const [liveSpy, setLiveSpy] = useState(-1)
-  
-  const [dialog, setDialog] = useState(null)
-
   const ws = useRef(null)
 
   // const getStmt = useCallback(throttle(()=>ws.current?.send?.("stmt"), 1000),[ws])
 
   const leave = () => {
-    ws.current && ws.current.close()
+    ws.current?.close?.()
     ws.current = null
     ID.current = null
     setState(-1)
@@ -65,7 +61,7 @@ function App() {
     ws.current?.close?.()
     let protocol = (location.protocol === "https:") ? "wss://" : "ws://";
     let url = protocol + location.host + location.pathname + "ws"
-    ws.current = new WebSocket(`${url}?name=${encodeURIComponent(unameRef.current)}`)
+    ws.current = new WebSocket(`${url}?name=${encodeURIComponent(unameRef.current)}&hub=${encodeURIComponent(hubIDRef.current)}`)
     window.dev = ws.current
 
     ws.current.onopen = function() {
@@ -91,6 +87,9 @@ function App() {
           setPlayers(msg.Clients)
           setPlayerCnt(msg.PlayerCnt)
           setSpyCnt(msg.SpyCnt)
+          setHubID(msg.HubID)
+          hubIDRef.current = msg.HubID
+          sessionStorage.setItem("hub", msg.HubID)
           switch (msg.State) {
             case 0:
               setState(0)
@@ -167,20 +166,22 @@ function App() {
           emitter.emit("block_banner")
           setState(1)
           setPlayers(msg.Clients)
-          setLiveLoyal(msg.Loyal)
-          setLiveSpy(msg.Spy)
           if (msg.Killed.ID==ID.current) {
-            setDialog(<VoteResult
-              liveLoyal={msg.Loyal} liveSpy={msg.Spy}
-              role={msg.Killed.Role} name={msg.Killed.Name}
-              isDead
-            />)
+            emitter.emit("dialog",{
+              content: <VoteResult
+                liveLoyal={msg.Loyal} liveSpy={msg.Spy}
+                role={msg.Killed.Role} name={msg.Killed.Name}
+                isDead
+              />
+            })
             setIsDead(true)
           } else {
-            setDialog(<VoteResult
-              liveLoyal={msg.Loyal} liveSpy={msg.Spy}
-              role={msg.Killed.Role} name={msg.Killed.Name}
-            />)
+            emitter.emit("dialog",{
+              content: <VoteResult
+                liveLoyal={msg.Loyal} liveSpy={msg.Spy}
+                role={msg.Killed.Role} name={msg.Killed.Name}
+              />
+            })
           }
           emitter.emit("banner", next_round_msg)
           break;
@@ -194,10 +195,12 @@ function App() {
               break
             }
           }
-          setDialog(<GameResult
-            loyal={msg.Loyal} spy={msg.Spy}
-            players={msg.Result} role={msg.Win} isWin={isWin}
-          />)
+          emitter.emit("dialog", {
+            content: <GameResult
+              loyal={msg.Loyal} spy={msg.Spy}
+              players={msg.Result} role={msg.Win} isWin={isWin}
+            />
+          })
           setState(0)
           setIsDead(false)
           setPlayers(v => {
@@ -240,6 +243,14 @@ function App() {
 
   // auto reconnect
   useEffect(()=>{
+
+    
+    let _hubID = new URL(location.href).searchParams.get("hub")
+    if (!_hubID) _hubID = sessionStorage.getItem("hub")
+    if (_hubID) {
+      setHubID(_hubID)
+      hubIDRef.current=_hubID
+    }
     let _uname = sessionStorage.getItem("uname")
     if (_uname) {
       setUname(_uname)
@@ -252,14 +263,35 @@ function App() {
     <div className='app'>
 
       <Banner/>
-      <Dialog content={dialog}/>
-
-      { (state==2||state==3) &&
-        <Nav/>
+      <Dialog/>
+      { state>=0 && 
+        <Nav
+          reset={()=>{
+            emitter.emit("dialog", {
+              content:<p>確定要重新開始遊戲嗎?</p>,
+              yes: ()=>ws.current?.send?.("reset")
+            })
+          }}
+          exit={()=>{
+            emitter.emit("dialog", {
+              content:<p>確定要離開遊戲嗎?</p>,
+              yes: ()=>{
+                if (state>0) ws.current?.send?.("reset")
+                sessionStorage.removeItem("hub")
+                sessionStorage.removeItem("uname")
+                leave()
+              }
+            })
+          }}
+        />
       }
 
-      { state>=1 && <Nav playerCnt={playerCnt} spyCnt={spyCnt}/>}
-      { state==-1 && <Home join={join} name={uname} setName={v=>{setUname(v);unameRef.current=v}}/>}
+      { state==-1 && 
+        <Home join={join} 
+          name={uname} setName={v=>{setUname(v);unameRef.current=v}}
+          hubID={hubID} setHubID={v=>{setHubID(v);hubIDRef.current=v}}
+        />
+      }
       { state==0 && 
         <Room 
           players={players} playerCnt={playerCnt} me={_ID}
@@ -280,7 +312,6 @@ function App() {
           done={()=>ws.current?.send?.('{"Type":"voted"}')}
         />
       }
-      { state==3 && <Result/>}
     </div>
   )
 }

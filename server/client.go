@@ -188,7 +188,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 				hub.Out(client, hub.GetJoinMsg())
 			}
 		}()
-		log.Printf("%s %s re-joined the game", client.ID, client.Name)
+		log.Printf("[%s] %s %s re-joined the game", hub.ID, client.ID, client.Name)
 	} else {
 		client = &Client{
 			ID:   xid.New().String(),

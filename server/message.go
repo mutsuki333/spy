@@ -39,6 +39,7 @@ type JoinMsg struct {
 func (h *Hub) GetJoinMsg() *JoinMsg {
 	msg := &JoinMsg{
 		Type:      "status",
+		HubID:     h.ID,
 		State:     h.State,
 		SpyCnt:    1 + (len(h.clients)-1)/4,
 		PlayerCnt: len(h.clients),

@@ -43,7 +43,7 @@ span { font-size: 4vh;}
   transform: translate(-50%, -50%);
 
   /* margin-top: 2.5dvh; */
-  background-color: #95ECD7;
+  background-color: #DAC9A6;
   border: 0 solid ;
   border-radius: 4dvh;
 }
@@ -53,7 +53,7 @@ span { font-size: 4vh;}
 }
 .title.home { padding-top: 15%; }
 .title.room { padding: 15% 0; }
-.title.vote { padding: 5% 0; }
+.title.vote { padding: 5dvh 0 0; }
 .title > span {
   font-size: 7.5dvh;
   font-weight: bolder;
@@ -122,12 +122,21 @@ span { font-size: 4vh;}
 .dialog-content button:hover {
   background-color: #d29e10;
 }
+.dialog-content .buttons {
+  width: 80%;
+  margin: auto;
+}
 
 .nav {
   position: absolute;
   width: 100%;
-  height: 10dvh;
+  font-size: 5dvh;
+  padding-top: 1dvh;
+  z-index: 100;
+  text-align: center;
+  color: #000000;
 }
+.nav i {cursor: pointer;}
 
 .players {
   width: 100%;
@@ -136,8 +145,8 @@ span { font-size: 4vh;}
   overflow-x: hidden;
   margin-bottom: 1dvh;
 }
-.players.narrate { max-height: 60dvh; }
-.players.vote { max-height: 60dvh; }
+.players.narrate { height: 60dvh; }
+.players.vote { height: 60dvh; }
 
 .player-name {
   padding-top: 1dvh;
@@ -264,8 +273,8 @@ span { font-size: 4vh;}
   font-weight: bold;
   color: white;
 }
-.stmt.narrate {
-  margin-top: 7.5dvh;
+.stmt.narrate, .stmt.vote {
+  margin-top: 9.5dvh;
 }
 
 .stmt.is-dead {
@@ -275,21 +284,25 @@ span { font-size: 4vh;}
 .home-logo {
   width: 70%;
   height: auto;
-  padding: min(10%, 10dvh) 15%;
+  padding: min(10%, 10dvh) 15% min(5%, 5dvh);
 }
 
 .home-join-ctr {
-	display: flex;
+	display: block;
 	align-items: center;
 	position: relative;
 	max-width: 70%;
   margin: auto;
 }
+.home-join-ctr span {
+  font-size: 3.5dvh;
+  color: #000000;
+}
 
 .home-join-ctr > input {
 	font-size: 2.5dvh;
-	padding: 5px 10px;
-	width: 100%;
+	padding: 1dvh 2dvh;
+	width: 87%;
 	outline: none;
 	background: #FFFFFF;
 	color: #000000;
@@ -321,6 +334,28 @@ span { font-size: 4vh;}
 .home-join-btn:hover {
   filter: brightness(80%);
 }
+
+.share { padding-bottom: 1.5dvh;} 
+.share img { width: 80%; }
+.share a { font-size: 4dvh; }
+
+.rules {
+  height: 60dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.rules h1 {
+  position: sticky;
+  top: -0.5dvh;
+  font-size: 6.5dvh;
+  background-color: white;
+}
+.rules li {
+  margin-right: 1dvh;
+  text-align: left;
+  font-size: 3dvh;
+}
+
 
 @keyframes bounce {
   0%{ -webkit-transform:translateY(0px) ;}
@@ -430,6 +465,10 @@ span { font-size: 4vh;}
   color: white;
   background-color: #678ab1;
 }
+.vote-btn-cntr.ready span {
+  color: black;
+  background-color: unset;
+}
 .vote-btn {
 
   padding: 0.5dvh 2.5dvh;
@@ -448,6 +487,7 @@ span { font-size: 4vh;}
 .vr, .gr {
   margin-top: 3dvh;
   text-align: center;
+  word-wrap: break-word;
 }
 .vr .player-icon {
   margin: auto;
@@ -514,6 +554,7 @@ span { font-size: 4vh;}
   padding-top: 1vh;
   font-size: 3dvh;
   word-wrap: break-word;
+  container-type: inline-size;
 }
 .gr .podium .col-4 {
   height: 25vh;
@@ -523,6 +564,16 @@ span { font-size: 4vh;}
 
 .gr .podium-player {
   flex: 1 ;
+  position: relative;
+}
+.gr .podium-player span {
+  position: absolute;
+  bottom: 0;
+  word-wrap: break-word;
+  width: 100%;
+
+  font-size: 6.5cqw;
+  transform: translateX(-50%);
 }
 .gr .podium-stage {
   height: 100%;
@@ -539,10 +590,13 @@ span { font-size: 4vh;}
 }
 
 .gr .podium-1 {
-  padding-top: 7vh;
+  min-height: 11dvh;
+}
+.gr .podium-2 {
+  min-height: 7dvh;
 }
 .gr .podium-3 {
-  padding-top: 8vh;
+  min-height: 15dvh;
 }
 
 .gr .podium-stage-1 {

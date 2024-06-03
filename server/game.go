@@ -29,7 +29,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 
 	if strings.HasPrefix(string(msg.Data), "fixed_question") {
 		fixed_question = strings.TrimSpace(strings.TrimPrefix(string(msg.Data), "fixed_question"))
-		log.Println("question is fixed to", fixed_question)
+		log.Printf("[%s] question is fixed to %s", h.ID, fixed_question)
 		return
 	}
 
@@ -37,7 +37,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 		id := strings.TrimPrefix(string(msg.Data), "kick ")
 		for c := range h.clients {
 			if c.ID == id {
-				log.Printf("%s %s is kicked", c.ID, c.Name)
+				log.Printf("[%s] %s %s is kicked", h.ID, c.ID, c.Name)
 				c.conn.Close()
 				return
 			}
@@ -67,11 +67,11 @@ func (h *Hub) Tick(msg *WsMsg) {
 					}
 				}
 				if isSpy {
-					log.Printf("%s is spy.", c.Name)
+					log.Printf("[%s] %s is spy.", h.ID, c.Name)
 					c.role = Spy
 					c.stmt = h.Spy
 				} else {
-					log.Printf("%s is loyal.", c.Name)
+					log.Printf("[%s] %s is loyal.", h.ID, c.Name)
 					c.role = Loyal
 					c.stmt = h.Loyal
 				}
@@ -100,13 +100,13 @@ func (h *Hub) Tick(msg *WsMsg) {
 					return
 				}
 				h.State = Narrate
-				log.Printf("%s is narrating.", start.Name)
+				log.Printf("[%s] %s is narrating.", h.ID, start.Name)
 				h.Out(nil, msg)
 			}()
 		}
 	case Narrate:
 		if string(msg.Data) == "narrated" {
-			log.Printf("%s has narrated.", msg.Client.Name)
+			log.Printf("[%s] %s has narrated.", h.ID, msg.Client.Name)
 			go h.Out(nil, &GameMsg{Type: "narrated", ClientID: msg.Client.ID, ClientName: msg.Client.Name})
 			msg.Client.Narrated = true
 
@@ -120,23 +120,23 @@ func (h *Hub) Tick(msg *WsMsg) {
 				// log.Println("[DEBUG] ", search, idx)
 				if search == idx {
 					// Done narration
-					log.Println("Done narration.")
+					log.Printf("[%s] Done narration.", h.ID)
 					for _, c := range h.clients_mirror {
 						c.VoteDone = false
 						c.VoteFor = nil
 						c.voted = 0
 					}
 					h.State = Vote
-					log.Println("Start voting")
+					log.Printf("[%s] Start voting", h.ID)
 					vsm := h.GetVoteMsg(false)
 					go h.Out(nil, vsm)
 					break
 				}
 				next := h.clients_mirror[search]
 				if next.IsDead || next.Narrated {
-					// log.Printf("%s has narrated.", next.Name)
+					// log.Printf("[%s] %s has narrated.",h.ID, next.Name)
 				} else {
-					log.Printf("%s is narrating.", next.Name)
+					log.Printf("[%s] %s is narrating.", h.ID, next.Name)
 					go h.Out(nil, &GameMsg{Type: "narrate", ClientID: next.ID, ClientName: next.Name})
 					break
 				}
@@ -166,7 +166,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 					}
 					msg.Client.VoteFor = c
 
-					log.Printf("%s votes %s.", msg.Client.Name, c.Name)
+					log.Printf("[%s] %s votes %s.", h.ID, msg.Client.Name, c.Name)
 					go h.Out(nil, h.GetVoteMsg(true))
 					break
 				}
@@ -179,7 +179,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 				break
 			}
 			msg.Client.VoteDone = true
-			log.Printf("%s done voting.", msg.Client.Name)
+			log.Printf("[%s] %s done voting.", h.ID, msg.Client.Name)
 			go h.Out(nil, &GameMsg{Type: "voted", ClientID: msg.Client.ID, ClientName: msg.Client.Name})
 
 			// Determine if vote has completed
@@ -193,7 +193,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 				}
 			}
 			if left == 0 {
-				log.Println("Vote done")
+				log.Printf("[%s] Vote done.", h.ID)
 				h.Round++
 
 				// determine who dies
@@ -212,7 +212,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 					}
 				}
 				candidate.IsDead = true
-				log.Printf("%s is killed", candidate.Name)
+				log.Printf("[%s] %s is killed", h.ID, candidate.Name)
 
 				// determine if game ends
 				living_loyal := 0
@@ -235,12 +235,13 @@ func (h *Hub) Tick(msg *WsMsg) {
 						if c.role == Loyal {
 							c.Wins++
 						}
+						c.stmt = ""
 					}
 
 					// send results
 					go h.Out(nil, h.GetGameResult(Loyal))
 					h.State = Ready
-					log.Println("loyal wins")
+					log.Printf("[%s] loyal wins.", h.ID)
 
 					// spy wins
 				} else if (living_spy+living_loyal == 3 && living_spy >= 2) || // tree left and two spy
@@ -249,12 +250,13 @@ func (h *Hub) Tick(msg *WsMsg) {
 						if c.role == Spy {
 							c.Wins++
 						}
+						c.stmt = ""
 					}
 
 					// send results
 					go h.Out(nil, h.GetGameResult(Spy))
 					h.State = Ready
-					log.Println("spy wins")
+					log.Printf("[%s] spy wins.", h.ID)
 
 				} else { // not ended
 
@@ -262,7 +264,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 					vr := h.GetVoteResult(living_loyal, living_spy, candidate)
 					go h.Out(nil, vr)
 
-					log.Println("next round")
+					log.Printf("[%s] next round", h.ID)
 					for _, c := range h.clients_mirror {
 						c.Narrated = false
 					}
@@ -276,7 +278,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 
 						next := h.clients_mirror[search]
 						if next.IsDead || next.Narrated {
-							// log.Printf("%s has narrated.", next.Name)
+							// log.Printf([%s] "%s has narrated.",h.ID, next.Name)
 						} else {
 							msg := &GameMsg{Type: "narrate", ClientID: next.ID, ClientName: next.Name}
 							h.State = PreNarrate
@@ -286,7 +288,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 									return
 								}
 								h.State = Narrate
-								log.Printf("%s is narrating.", next.Name)
+								log.Printf("[%s] %s is narrating.", h.ID, next.Name)
 								h.Out(nil, msg)
 							}()
 							break
@@ -305,7 +307,7 @@ func (h *Hub) Tick(msg *WsMsg) {
 }
 
 func (h *Hub) Reset() {
-	log.Println("Game reset")
+	log.Printf("[%s] Game reset", h.ID)
 	h.Loyal = ""
 	h.Spy = ""
 	h.LoyalLeft = 0
